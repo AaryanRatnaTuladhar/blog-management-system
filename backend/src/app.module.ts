@@ -15,7 +15,7 @@ import { HealthController } from './health.controller.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env', ignoreEnvVars: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 40 }]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
