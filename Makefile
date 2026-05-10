@@ -17,7 +17,7 @@ down:
 	docker compose down
 
 api:
-	npm --prefix backend run start:dev
+	cd backend && npm run start:dev
 
 web:
 	cd frontend && npx next dev
@@ -26,7 +26,7 @@ dev:
 	$(MAKE) -j2 api web
 
 seed:
-	npm --prefix backend run seed
+	cd backend && npm run seed
 
 status:
 	@powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing http://localhost:4000/health | Out-Null; Write-Host 'backend: running at http://localhost:4000' } catch { Write-Host 'backend: not responding at http://localhost:4000' }"

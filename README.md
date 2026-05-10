@@ -27,7 +27,7 @@ docker compose up -d
 ```
 
 This starts:
-- Postgres on `5432`
+- Postgres on `5433` (host) -> `5432` (container)
 - Redis on `6379`
 - RabbitMQ on `5672` (`15672` management UI)
 
@@ -39,6 +39,7 @@ npm run start:dev
 ```
 
 Backend URL: `http://localhost:4000`
+Health check: `http://localhost:4000/health`
 
 ## Run Frontend
 ```bash
@@ -78,7 +79,29 @@ make status
 make down
 ```
 
-`make up` starts Postgres, Redis, and RabbitMQ with Docker. `make api` runs the backend on `http://localhost:4000`. `make web` runs the frontend on `http://localhost:3000`. `make status` checks whether both are responding.
+`make up` starts Postgres, Redis, and RabbitMQ with Docker. `make api` runs the backend from `/backend` so `backend/.env` is used consistently. `make web` runs the frontend on `http://localhost:3000`. `make status` checks whether both are responding.
+
+## Common API Not Running Fix
+If backend logs show database auth or connection issues:
+1. Ensure Docker infra is up:
+```bash
+make up
+```
+2. Ensure backend DB port matches docker mapping:
+`backend/.env` should have `DB_PORT=5433`.
+3. Restart backend:
+```bash
+make api
+```
+4. Verify:
+```bash
+make status
+```
+If password auth still fails, reset docker DB volume:
+```bash
+docker compose down -v
+docker compose up -d
+```
 
 ## API Summary
 - Auth: `POST /auth/register`, `POST /auth/login`, `GET /auth/me`
