@@ -39,15 +39,27 @@ export class CacheService {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    const value = await this.redis.get(key);
-    return value ? (JSON.parse(value) as T) : null;
+    try {
+      const value = await this.redis.get(key);
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'string') {
+        return JSON.parse(value) as T;
+      }
+      return value as T;
+    } catch {
+      return null;
+    }
   }
 
   async set(key: string, value: unknown, ttlSeconds = 120) {
-    await this.redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+    try {
+      await this.redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+    } catch {
+      // Cache failures should not break API responses.
+    }
   }
 
   del(key: string) {
-    return this.redis.del(key);
+    return this.redis.del(key).catch(() => 0);
   }
 }
