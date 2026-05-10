@@ -21,9 +21,9 @@ export default function AdminDashboardPage() {
       api('/admin/users'),
       api('/admin/comments'),
     ]);
-    setPending(pendingBlogs);
-    setUsers(allUsers);
-    setComments(allComments);
+    setPending(pendingBlogs as Blog[]);
+    setUsers(allUsers as User[]);
+    setComments(allComments as Comment[]);
   };
 
   useEffect(() => {

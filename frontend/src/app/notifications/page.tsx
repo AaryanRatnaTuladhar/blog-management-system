@@ -11,7 +11,7 @@ import type { Notification } from '@/lib/types';
 export default function NotificationsPage() {
   const [items, setItems] = useState<Notification[]>([]);
   const [message, setMessage] = useState('');
-  const load = () => api('/notifications').then(setItems);
+  const load = () => api('/notifications').then(a=>setItems(a as Notification[])).catch(() => setItems([]));
 
   useEffect(() => {
     void (async () => {
