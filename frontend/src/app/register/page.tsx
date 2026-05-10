@@ -1,28 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { LogIn, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Sparkles, UserPlus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { homeFor, useAuth } from '@/lib/auth';
 
-function LoginInner() {
+export default function RegisterPage() {
   const router = useRouter();
-  const params = useSearchParams();
   const { user, loading, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const next = params?.get('next') || '';
-
   useEffect(() => {
     if (!loading && user) {
-      router.replace(next || homeFor(user.role));
+      router.replace(homeFor(user.role));
     }
-  }, [loading, user, router, next]);
+  }, [loading, user, router]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -39,14 +36,18 @@ function LoginInner() {
     }
     setSaving(true);
     try {
-      const response = await api<{ accessToken: string }>('/auth/login', {
+      const response = await api<{ accessToken: string }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
       });
       const me = await login(response.accessToken);
-      router.replace(next || homeFor(me.role));
+      router.replace(homeFor(me.role));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Check your email and password.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Registration failed. Use a unique email and a password that is 6+ characters.',
+      );
     } finally {
       setSaving(false);
     }
@@ -59,11 +60,11 @@ function LoginInner() {
           <div className="row" style={{ gap: 8 }}>
             <Sparkles size={16} />
             <span style={{ fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 12 }}>
-              Welcome back
+              Join the workspace
             </span>
           </div>
-          <h2>Sign in to Aaryan CMS</h2>
-          <p>Pick up where you left off — drafts, approvals, comments, and notifications.</p>
+          <h2>Create your Aaryan CMS account</h2>
+          <p>Start drafting blogs and submit them for admin approval to publish.</p>
         </div>
         <div className="panel stack">
           <form className="form" onSubmit={handleSubmit}>
@@ -85,35 +86,23 @@ function LoginInner() {
                 id="password"
                 className="input"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="••••••••"
+                placeholder="At least 6 characters"
               />
             </div>
             {error ? <p className="notice danger">{error}</p> : null}
             <button className="btn primary" type="submit" disabled={saving}>
-              <LogIn size={16} />
-              {saving ? 'Signing in…' : 'Sign in'}
+              <UserPlus size={16} />
+              {saving ? 'Creating…' : 'Create account'}
             </button>
           </form>
           <p className="meta">
-            New here? <Link href="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>Create an account</Link>.
+            Already registered? <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign in</Link>.
           </p>
         </div>
-        <p className="meta" style={{ marginTop: 16, textAlign: 'center' }}>
-          Demo accounts after seeding: <code>admin@example.com</code> / <code>password123</code>,{' '}
-          <code>maya@example.com</code> / <code>password123</code>.
-        </p>
       </section>
     </main>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginInner />
-    </Suspense>
   );
 }
