@@ -13,13 +13,13 @@ Fullstack blog management app with:
 - Docker + Docker Compose
 
 ## Project Structure
-- `C:/Users/LENOVO/Desktop/aaryan-cms/frontend`
-- `C:/Users/LENOVO/Desktop/aaryan-cms/backend`
+- `/frontend`
+- `/backend`
 
 ## Environment
-1. Copy `C:/Users/LENOVO/Desktop/aaryan-cms/.env.example` to `.env`.
-2. Copy `C:/Users/LENOVO/Desktop/aaryan-cms/backend/.env.example` to `backend/.env`.
-3. Copy `C:/Users/LENOVO/Desktop/aaryan-cms/frontend/.env.example` to `frontend/.env.local`.
+1. Copy `/.env.example` to `.env`.
+2. Copy `/backend/.env.example` to `backend/.env`.
+3. Copy `/frontend/.env.example` to `frontend/.env.local`.
 
 ## Start Infrastructure
 ```bash
