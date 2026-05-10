@@ -1,8 +1,19 @@
-export function EmptyState({ title, body }: { title: string; body: string }) {
+import type { ReactNode } from 'react';
+
+export function EmptyState({
+  title,
+  body,
+  action,
+}: {
+  title: string;
+  body: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="empty">
       <strong>{title}</strong>
-      <p>{body}</p>
+      <p style={{ margin: 0 }}>{body}</p>
+      {action ? <div className="row" style={{ justifyContent: 'center', marginTop: 12 }}>{action}</div> : null}
     </div>
   );
 }

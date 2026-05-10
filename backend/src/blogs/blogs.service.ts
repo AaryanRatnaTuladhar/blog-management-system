@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CacheService } from '../infrastructure/cache/cache.service.js';
 import { QueueService } from '../infrastructure/queue/queue.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -16,6 +16,7 @@ import { CreateBlogDto, UpdateBlogDto } from './dto.js';
 export class BlogsService {
   constructor(
     @InjectRepository(Blog) private readonly blogRepo: Repository<Blog>,
+    private readonly dataSource: DataSource,
     private readonly queue: QueueService,
     private readonly cache: CacheService,
     private readonly notifications: NotificationsService,
@@ -48,8 +49,16 @@ export class BlogsService {
 
   async remove(userId: string, id: string) {
     const blog = await this.getOwned(userId, id);
-    await this.blogRepo.delete({ id: blog.id });
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(
+        'UPDATE "comments" SET "parentCommentId" = NULL WHERE "blogId" = $1',
+        [blog.id],
+      );
+      await manager.query('DELETE FROM "comments" WHERE "blogId" = $1', [blog.id]);
+      await manager.query('DELETE FROM "blogs" WHERE "id" = $1', [blog.id]);
+    });
     await this.cache.del('public:blogs');
+    await this.cache.del(`public:blog:${blog.id}`);
     return { success: true };
   }
 
@@ -92,6 +101,23 @@ export class BlogsService {
       relations: ['author'],
       order: { updatedAt: 'DESC' },
     });
+  }
+
+  listAll() {
+    return this.blogRepo.find({
+      relations: ['author'],
+      order: { updatedAt: 'DESC' },
+    });
+  }
+
+  async stats() {
+    const [draft, pending, approved, rejected] = await Promise.all([
+      this.blogRepo.count({ where: { status: 'draft' } }),
+      this.blogRepo.count({ where: { status: 'pending' } }),
+      this.blogRepo.count({ where: { status: 'approved' } }),
+      this.blogRepo.count({ where: { status: 'rejected' } }),
+    ]);
+    return { draft, pending, approved, rejected };
   }
 
   async approve(id: string) {

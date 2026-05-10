@@ -22,6 +22,17 @@ export class NotificationsService {
     });
   }
 
+  countUnread(userId: string) {
+    return this.repo.count({
+      where: { user: { id: userId }, isRead: false },
+    });
+  }
+
+  async markAllRead(userId: string) {
+    await this.repo.update({ user: { id: userId }, isRead: false }, { isRead: true });
+    return { success: true };
+  }
+
   async markRead(userId: string, id: string) {
     await this.repo.update({ id, user: { id: userId } }, { isRead: true });
     return { success: true };

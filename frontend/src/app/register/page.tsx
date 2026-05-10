@@ -1,77 +1,119 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { UserPlus } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { LogIn, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
+import { homeFor, useAuth } from '@/lib/auth';
 
-export default function RegisterPage() {
+function LoginInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const { user, loading, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const router = useRouter();
+
+  const next = params?.get('next') || '';
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace(next || homeFor(user.role));
+    }
+  }, [loading, user, router, next]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    if (!trimmedEmail) {
+      setError('Email is required.');
+      return;
+    }
+    if (trimmedPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await api<{ accessToken: string }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
+      });
+      const me = await login(response.accessToken);
+      router.replace(next || homeFor(me.role));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed. Check your email and password.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="auth-wrap">
-      <section className="panel auth-card stack">
-        <div>
-          <div className="eyebrow">Create workspace access</div>
-          <h1 className="title">Register</h1>
-          <p className="subtitle">Start with drafts, then submit blogs for admin approval.</p>
+      <section className="auth-card">
+        <div className="auth-banner">
+          <div className="row" style={{ gap: 8 }}>
+            <Sparkles size={16} />
+            <span style={{ fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 12 }}>
+              Welcome back
+            </span>
+          </div>
+          <h2>Sign in to Aaryan CMS</h2>
+          <p>Pick up where you left off — drafts, approvals, comments, and notifications.</p>
         </div>
-        <form
-          className="form"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setError('');
-            setSaving(true);
-            try {
-              const trimmedEmail = email.trim();
-              const pwd = password.trim();
-              if (pwd.length < 6) {
-                setError('Password must be at least 6 characters.');
-                return;
-              }
-              const res = await api('/auth/register', {
-                method: 'POST',
-                body: JSON.stringify({ email: trimmedEmail, password: pwd }),
-              });
-              localStorage.setItem('token', res.accessToken);
-              router.push('/dashboard');
-            } catch (err) {
-              setError(
-                err instanceof Error ? err.message : 'Registration failed. Use a unique email and a 6+ character password.',
-              );
-            } finally {
-              setSaving(false);
-            }
-          }}
-        >
-          <div className="field">
-            <label>Email</label>
-            <input className="input" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-          </div>
-          <div className="field">
-            <label>Password</label>
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </div>
-          {error && <p className="meta" style={{ color: '#b91c1c' }}>{error}</p>}
-          <button className="btn primary" type="submit" disabled={saving}>
-            <UserPlus size={16} />
-            {saving ? 'Creating...' : 'Create account'}
-          </button>
-        </form>
-        <p className="meta">
-          Already registered? <Link href="/login">Login</Link>
+        <div className="panel stack">
+          <form className="form" onSubmit={handleSubmit}>
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                className="input"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                className="input"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            {error ? <p className="notice danger">{error}</p> : null}
+            <button className="btn primary" type="submit" disabled={saving}>
+              <LogIn size={16} />
+              {saving ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+          <p className="meta">
+            New here? <Link href="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>Create an account</Link>.
+          </p>
+        </div>
+        <p className="meta" style={{ marginTop: 16, textAlign: 'center' }}>
+          Demo accounts after seeding: <code>admin@example.com</code> / <code>password123</code>,{' '}
+          <code>maya@example.com</code> / <code>password123</code>.
         </p>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

@@ -24,6 +24,30 @@ export class AdminController {
     private readonly commentsService: CommentsService,
   ) {}
 
+  @Get('stats')
+  async stats() {
+    const [blogs, users] = await Promise.all([
+      this.blogsService.stats(),
+      this.usersService.listUsers(),
+    ]);
+    const userTotals = users.reduce(
+      (acc, user) => {
+        acc.total += 1;
+        if (user.role === 'admin') acc.admins += 1;
+        else acc.users += 1;
+        if (user.isActive) acc.active += 1;
+        return acc;
+      },
+      { total: 0, admins: 0, users: 0, active: 0 },
+    );
+    return { blogs, users: userTotals };
+  }
+
+  @Get('blogs')
+  allBlogs() {
+    return this.blogsService.listAll();
+  }
+
   @Post('blogs/:id/approve')
   approve(@Param('id') id: string) {
     return this.blogsService.approve(id);

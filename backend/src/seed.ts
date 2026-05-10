@@ -82,17 +82,15 @@ async function ensureUser(
   email: string,
   role: UserRole,
 ) {
+  const passwordHash = await bcrypt.hash(password, 10);
   const existing = await repo.findOne({ where: { email } });
   if (existing) {
-    if (existing.role !== role || !existing.isActive) {
-      existing.role = role;
-      existing.isActive = true;
-      await repo.save(existing);
-    }
+    existing.role = role;
+    existing.isActive = true;
+    existing.passwordHash = passwordHash;
+    await repo.save(existing);
     return existing;
   }
-
-  const passwordHash = await bcrypt.hash(password, 10);
   return repo.save(repo.create({ email, role, passwordHash, isActive: true }));
 }
 
